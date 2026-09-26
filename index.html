@@ -379,6 +379,50 @@ document.getElementById("pf-save").addEventListener("click", ()=>{
   fillOrderProductSelect();
 });
 document.getElementById("pf-clear").addEventListener("click", clearProductForm);
+document.getElementById("pf-barcode").addEventListener("change", ()=>{
+  const code = document.getElementById("pf-barcode").value.trim();
+  if(!code) return;
+  const existing = state.products.find(p=>p.barcode && p.barcode===code);
+  if(existing){
+    fillProductForm(existing);
+    toast("Товар с таким штрихкодом уже есть в базе — форма заполнена");
+  } else if(!document.getElementById("pf-name").value.trim()){
+    lookupBarcodeName(code);
+  }
+});
+// ---------- online barcode → name lookup ----------
+async function lookupBarcodeName(code){
+  toast("Ищу название по штрихкоду…");
+  try{
+    const r2 = await fetch("https://api.upcitemdb.com/prod/trial/lookup?upc="+encodeURIComponent(code));
+    const data2 = await r2.json();
+    if(data2 && Array.isArray(data2.items) && data2.items.length && data2.items[0].title){
+      const name2 = data2.items[0].title;
+      if(!document.getElementById("pf-name").value.trim() && document.getElementById("pf-barcode").value.trim()===code){
+        document.getElementById("pf-name").value = name2;
+      }
+      toast("Название найдено: "+name2);
+      return;
+    }
+  }catch(e){ /* сеть недоступна, лимит запросов или CORS — пробуем резервный источник */ }
+  try{
+    const r = await fetch("https://world.openfoodfacts.org/api/v0/product/"+encodeURIComponent(code)+".json");
+    const data = await r.json();
+    if(data && data.status===1 && data.product){
+      const p = data.product;
+      const name = p.product_name_ru || p.product_name || p.generic_name_ru || p.generic_name ||
+        (p.brands ? p.brands + (p.generic_name?(" "+p.generic_name):"") : "");
+      if(name){
+        if(!document.getElementById("pf-name").value.trim() && document.getElementById("pf-barcode").value.trim()===code){
+          document.getElementById("pf-name").value = name;
+        }
+        toast("Название найдено: "+name);
+        return;
+      }
+    }
+  }catch(e){ /* ignore */ }
+  toast("Не удалось найти название по этому штрихкоду — введите вручную");
+}
 function clearProductForm(){
   editingId = null;
   document.getElementById("pf-title").textContent = "Добавить товар";
@@ -653,6 +697,7 @@ document.getElementById("pf-scan").addEventListener("click", ()=>{
       toast("Товар с таким штрихкодом уже есть в базе — форма заполнена");
     } else {
       toast("Штрихкод распознан: "+code);
+      lookupBarcodeName(code);
     }
   });
 });
