@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Опт-Учёт</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F6F6F3; --surface:#FFFFFF; --surface-2:#EFEFEA;
+    --text:#15181F; --muted:#6B7280; --border:rgba(20,20,20,.09);
+    --accent:#2F6FED; --accent-ink:#FFFFFF;
+    --good:#178A4C; --warn:#B5720B; --danger:#C0362C;
+    --nav-h:64px;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#111319; --surface:#191C24; --surface-2:#20242E;
+      --text:#EAEDF3; --muted:#9AA3B2; --border:rgba(255,255,255,.09);
+      --good:#3FCB80; --warn:#E3A53D; --danger:#F0685F;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#111319; --surface:#191C24; --surface-2:#20242E;
+    --text:#EAEDF3; --muted:#9AA3B2; --border:rgba(255,255,255,.09);
+    --good:#3FCB80; --warn:#E3A53D; --danger:#F0685F;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Manrope',system-ui,-apple-system,sans-serif;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .mono{font-family:'JetBrains Mono',ui-monospace,monospace;}
+  header.top{
+    position:sticky; top:0; z-index:5; background:var(--bg);
+    padding:calc(14px + env(safe-area-inset-top,0px)) 18px 10px;
+    border-bottom:1px solid var(--border);
+  }
+  header.top h1{margin:0; font-size:19px; font-weight:800; letter-spacing:-.01em;}
+  header.top p{margin:2px 0 0; font-size:12.5px; color:var(--muted);}
+  main{padding:14px 14px calc(var(--nav-h) + 26px);}
+  .screen{display:none;}
+  .screen.active{display:block;}
+  .card{
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:14px; padding:14px; margin-bottom:10px;
+  }
+  .card + .card{margin-top:10px;}
+  .row{display:flex; align-items:center; gap:8px;}
+  .row.between{justify-content:space-between;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  label{display:block; font-size:12px; color:var(--muted); margin:10px 0 4px;}
+  label:first-child{margin-top:0;}
+  input,select{
+    width:100%; padding:10px 11px; font-size:15.5px; border-radius:10px;
+    border:1px solid var(--border); background:var(--surface-2); color:var(--text);
+    font-family:inherit;
+  }
+  input.mono{font-family:'JetBrains Mono',monospace;}
+  input:focus,select:focus{outline:2px solid var(--accent); outline-offset:1px;}
+  button{
+    font-family:inherit; font-size:14.5px; font-weight:700; border:none;
+    border-radius:10px; padding:11px 14px; cursor:pointer;
+  }
+  button:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .btn-accent{background:var(--accent); color:var(--accent-ink);}
+  .btn-ghost{background:var(--surface-2); color:var(--text);}
+  .btn-danger{background:transparent; color:var(--danger); padding:6px 8px; font-size:13px;}
+  .btn-block{width:100%;}
+  .btn-sm{padding:7px 10px; font-size:13px; border-radius:9px;}
+  .pill{
+    display:inline-block; padding:2px 8px; border-radius:999px;
+    font-size:11.5px; font-weight:700;
+  }
+  .pill.good{background:color-mix(in srgb, var(--good) 16%, transparent); color:var(--good);}
+  .pill.warn{background:color-mix(in srgb, var(--warn) 18%, transparent); color:var(--warn);}
+  .pill.danger{background:color-mix(in srgb, var(--danger) 16%, transparent); color:var(--danger);}
+  .item{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:11px 0; border-bottom:1px solid var(--border); gap:10px;
+  }
+  .item:last-child{border-bottom:none;}
+  .item .name{font-weight:700; font-size:14.5px;}
+  .item .sub{font-size:12px; color:var(--muted); margin-top:2px;}
+  .muted{color:var(--muted);}
+  .empty{text-align:center; color:var(--muted); padding:26px 10px; font-size:13.5px;}
+  h2.section{font-size:14px; margin:2px 0 10px; color:var(--muted); font-weight:700; text-transform:none;}
+  .stepper{display:flex; align-items:center; gap:8px;}
+  .stepper button{width:32px; height:32px; padding:0; font-size:17px; line-height:1;}
+  nav.bottom{
+    position:fixed; left:0; right:0; bottom:0; z-index:10;
+    display:flex; background:var(--surface); border-top:1px solid var(--border);
+    padding-bottom:env(safe-area-inset-bottom,0px); height:var(--nav-h);
+  }
+  nav.bottom button{
+    flex:1; background:none; border-radius:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:2px; color:var(--muted); font-weight:600; font-size:10.5px;
+  }
+  nav.bottom button .ic{font-size:20px;}
+  nav.bottom button.active{color:var(--accent);}
+  .modal-bg{
+    position:fixed; inset:0; background:rgba(10,10,12,.45); z-index:20;
+    display:flex; align-items:flex-end; justify-content:center;
+  }
+  .modal-bg.hidden{display:none;}
+  .modal{
+    background:var(--surface); width:100%; max-width:520px; border-radius:16px 16px 0 0;
+    padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px)); max-height:85vh; overflow:auto;
+  }
+  .modal h3{margin:0 0 12px; font-size:16px;}
+  .toast{
+    position:fixed; left:50%; bottom:calc(var(--nav-h) + 16px); transform:translateX(-50%);
+    background:var(--text); color:var(--bg); padding:10px 16px; border-radius:10px;
+    font-size:13.5px; z-index:30; opacity:0; pointer-events:none; transition:opacity .25s;
+  }
+  .toast.show{opacity:1;}
+  #invoiceCanvasHost{position:fixed; left:-9999px; top:0;}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1>📦 Опт-Учёт</h1>
+  <p>Товары, склад и оптовые заказы</p>
+</header>
+
+<main>
+
+  <!-- ТОВАРЫ -->
+  <section id="tab-products" class="screen active">
+    <div class="card">
+      <h2 class="section" id="pf-title">Добавить товар</h2>
+      <label>Штрихкод (необязательно)</label>
+      <div class="row">
+        <input class="mono" id="pf-barcode" inputmode="numeric" placeholder="Введите или отсканируйте" style="flex:1;">
+        <button class="btn-ghost" id="pf-scan" type="button">📷 Скан</button>
+      </div>
+      <label>Название товара</label>
+      <input id="pf-name" placeholder="Например, Чехол iPhone 15 силикон">
+      <div class="grid2">
+        <div>
+          <label>Закупка, ₽</label>
+          <input class="mono" id="pf-purchase" type="number" inputmode="decimal" min="0" step="1" value="0">
+        </div>
+        <div>
+          <label>Продажа, ₽</label>
+          <input class="mono" id="pf-sale" type="number" inputmode="decimal" min="0" step="1" value="0">
+        </div>
+      </div>
+      <label>Остаток на складе, шт.</label>
+      <input class="mono" id="pf-stock" type="number" inputmode="numeric" min="0" step="1" value="0">
+      <p class="muted" style="font-size:13px;margin:10px 0 12px;">Маржа: <span class="mono" id="pf-margin">0 ₽ (0%)</span></p>
+      <div class="row">
+        <button class="btn-accent btn-block" id="pf-save">💾 Сохранить</button>
+        <button class="btn-ghost" id="pf-clear" style="display:none;">Отмена</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <input id="p-search" placeholder="🔍 Поиск по названию или штрихкоду">
+    </div>
+    <div class="card" id="products-list"></div>
+  </section>
+
+  <!-- СКЛАД -->
+  <section id="tab-stock" class="screen">
+    <div class="card row between">
+      <span class="section" style="margin:0;">Показать только низкий остаток</span>
+      <input type="checkbox" id="stock-lowonly" style="width:auto;">
+    </div>
+    <div class="card" id="stock-list"></div>
+  </section>
+
+  <!-- ЗАКАЗЫ -->
+  <section id="tab-orders" class="screen">
+    <div class="card">
+      <h2 class="section">Магазин</h2>
+      <div class="row">
+        <select id="o-store" style="flex:1;"></select>
+        <button class="btn-ghost btn-sm" id="o-newstore">+ Новый</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section">Добавить товар в заказ</h2>
+      <div class="row">
+        <select id="o-product" style="flex:1;"></select>
+        <button class="btn-ghost" id="o-scan" type="button">📷 Скан</button>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <input class="mono" id="o-qty" type="number" min="1" step="1" value="1" style="flex:1;">
+        <button class="btn-accent" id="o-add">Добавить</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section">Корзина</h2>
+      <div id="o-cart"></div>
+      <div class="row between" style="margin-top:8px;">
+        <strong>Итого</strong>
+        <strong class="mono" id="o-total">0.00 ₽</strong>
+      </div>
+      <div class="row" style="margin-top:12px;">
+        <button class="btn-ghost" id="o-clear">Очистить</button>
+        <button class="btn-accent btn-block" id="o-confirm">✅ Оформить и создать PDF</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section">История заказов</h2>
+      <div id="o-history"></div>
+    </div>
+  </section>
+
+  <!-- АНАЛИТИКА -->
+  <section id="tab-analytics" class="screen">
+    <div class="card row" style="gap:6px;">
+      <button class="btn-sm btn-ghost period" data-d="7">7 дней</button>
+      <button class="btn-sm btn-ghost period" data-d="30">30 дней</button>
+      <button class="btn-sm btn-ghost period" data-d="0">Всё время</button>
+    </div>
+    <div class="card grid2" id="a-summary"></div>
+    <div class="card">
+      <h2 class="section">🔥 Хиты продаж</h2>
+      <div id="a-top"></div>
+    </div>
+  </section>
+
+  <!-- ДАННЫЕ -->
+  <section id="tab-data" class="screen">
+    <div class="card">
+      <h2 class="section">💾 Резервная копия</h2>
+      <p class="muted" style="font-size:13px;margin:0 0 10px;">Скачайте файл на телефон или скопируйте текст ниже — например, чтобы прислать его мне в чат и попросить что-то изменить (добавить товары, поправить цены и т.д.).</p>
+      <textarea id="io-export" readonly class="mono" style="width:100%;min-height:110px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);padding:10px;font-size:12px;"></textarea>
+      <div class="row" style="margin-top:10px;">
+        <button class="btn-ghost btn-block" id="io-copy">📋 Скопировать</button>
+        <button class="btn-accent btn-block" id="io-download">⬇️ Скачать файл</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section">📥 Применить изменения / восстановить</h2>
+      <p class="muted" style="font-size:13px;margin:0 0 10px;">Вставьте сюда JSON (например, тот, что я подготовил для вас в чате) и нажмите «Применить» — он полностью заменит текущие данные в приложении.</p>
+      <input type="file" id="io-file" accept="application/json" style="margin-bottom:8px;">
+      <textarea id="io-import" placeholder="Вставьте JSON сюда…" class="mono" style="width:100%;min-height:110px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);padding:10px;font-size:12px;"></textarea>
+      <button class="btn-accent btn-block" id="io-apply" style="margin-top:10px;">✅ Применить</button>
+    </div>
+  </section>
+
+</main>
+
+<nav class="bottom">
+  <button data-tab="products" class="active"><span class="ic">📦</span>Товары</button>
+  <button data-tab="stock"><span class="ic">🏬</span>Склад</button>
+  <button data-tab="orders"><span class="ic">🧾</span>Заказы</button>
+  <button data-tab="analytics"><span class="ic">📊</span>Аналитика</button>
+  <button data-tab="data"><span class="ic">⚙️</span>Данные</button>
+</nav>
+
+<div class="modal-bg hidden" id="modal-store">
+  <div class="modal">
+    <h3>Новый магазин</h3>
+    <label>Название</label>
+    <input id="ns-name" placeholder="Например, Магазин на Абовяна">
+    <div class="row" style="margin-top:14px;">
+      <button class="btn-ghost btn-block" id="ns-cancel">Отмена</button>
+      <button class="btn-accent btn-block" id="ns-save">Добавить</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg hidden" id="modal-scanner">
+  <div class="modal">
+    <h3 id="scan-title">Сканирование штрихкода</h3>
+    <div id="scanner-reader" style="width:100%;border-radius:12px;overflow:hidden;background:#000;min-height:220px;"></div>
+    <p class="muted" id="scan-hint" style="font-size:12.5px;margin:10px 0 0;">Наведите камеру на штрихкод. Распознавание произойдёт автоматически.</p>
+    <button class="btn-ghost btn-block" id="scan-cancel" style="margin-top:14px;">Отмена</button>
+  </div>
+</div>
+
+<div id="invoiceCanvasHost"></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script>
+(function(){
+"use strict";
+
+// ---------- state ----------
+const STORAGE_KEY = "wa_state_v1";
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return {products:[], stores:[], orders:[]};
+}
+function saveState(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+}
+let state = loadState();
+let cart = [];
+let editingId = null;
+let analyticsDays = 30;
+
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function money(n){ return (Math.round((n+Number.EPSILON)*100)/100).toFixed(2); }
+function esc(s){ return (s||"").replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._h);
+  toast._h = setTimeout(()=>t.classList.remove("show"), 2200);
+}
+
+// ---------- tabs ----------
+document.querySelectorAll("nav.bottom button").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll("nav.bottom button").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("tab-"+btn.dataset.tab).classList.add("active");
+    if(btn.dataset.tab==="orders") renderOrdersTab();
+    if(btn.dataset.tab==="analytics") renderAnalytics();
+    if(btn.dataset.tab==="data") renderDataTab();
+  });
+});
+
+// ---------- products ----------
+function marginOf(p){
+  const m = p.sale - p.purchase;
+  const pct = p.purchase>0 ? (m/p.purchase*100) : 0;
+  return {m, pct};
+}
+function renderProductForm(){
+  const purchase = parseFloat(document.getElementById("pf-purchase").value)||0;
+  const sale = parseFloat(document.getElementById("pf-sale").value)||0;
+  const m = sale-purchase, pct = purchase>0?(m/purchase*100):0;
+  document.getElementById("pf-margin").textContent = money(m)+" ₽ ("+pct.toFixed(1)+"%)";
+}
+["pf-purchase","pf-sale"].forEach(id=>document.getElementById(id).addEventListener("input", renderProductForm));
+
+document.getElementById("pf-save").addEventListener("click", ()=>{
+  const name = document.getElementById("pf-name").value.trim();
+  if(!name){ toast("Укажите название товара"); return; }
+  const barcode = document.getElementById("pf-barcode").value.trim();
+  const purchase = parseFloat(document.getElementById("pf-purchase").value)||0;
+  const sale = parseFloat(document.getElementById("pf-sale").value)||0;
+  const stock = parseFloat(document.getElementById("pf-stock").value)||0;
+
+  if(editingId){
+    const p = state.products.find(x=>x.id===editingId);
+    Object.assign(p, {barcode, name, purchase, sale, stock});
+    toast("Товар обновлён");
+  } else {
+    let existing = barcode ? state.products.find(x=>x.barcode && x.barcode===barcode) : null;
+    if(existing){
+      Object.assign(existing, {name, purchase, sale, stock});
+      toast("Товар обновлён (штрихкод уже был в базе)");
+    } else {
+      state.products.push({id:uid(), barcode, name, purchase, sale, stock});
+      toast("Товар добавлен");
+    }
+  }
+  saveState();
+  clearProductForm();
+  renderProducts();
+  renderStock();
+  fillOrderProductSelect();
+});
+document.getElementById("pf-clear").addEventListener("click", clearProductForm);
+function clearProductForm(){
+  editingId = null;
+  document.getElementById("pf-title").textContent = "Добавить товар";
+  document.getElementById("pf-barcode").value="";
+  document.getElementById("pf-name").value="";
+  document.getElementById("pf-purchase").value="0";
+  document.getElementById("pf-sale").value="0";
+  document.getElementById("pf-stock").value="0";
+  document.getElementById("pf-clear").style.display="none";
+  renderProductForm();
+}
+function fillProductForm(p){
+  editingId = p.id;
+  document.getElementById("pf-title").textContent = "Изменить товар";
+  document.getElementById("pf-barcode").value = p.barcode||"";
+  document.getElementById("pf-name").value = p.name;
+  document.getElementById("pf-purchase").value = p.purchase;
+  document.getElementById("pf-sale").value = p.sale;
+  document.getElementById("pf-stock").value = p.stock;
+  document.getElementById("pf-clear").style.display="inline-block";
+  renderProductForm();
+}
+function editProduct(id){
+  const p = state.products.find(x=>x.id===id);
+  if(!p) return;
+  fillProductForm(p);
+  document.getElementById("tab-products").scrollIntoView({behavior:"smooth"});
+}
+function deleteProduct(id){
+  state.products = state.products.filter(x=>x.id!==id);
+  saveState(); renderProducts(); renderStock(); fillOrderProductSelect();
+}
+document.getElementById("p-search").addEventListener("input", renderProducts);
+
+function renderProducts(){
+  const q = document.getElementById("p-search").value.trim().toLowerCase();
+  const list = state.products
+    .filter(p=> !q || p.name.toLowerCase().includes(q) || (p.barcode||"").includes(q))
+    .sort((a,b)=>a.name.localeCompare(b.name,"ru"));
+  const host = document.getElementById("products-list");
+  if(!list.length){ host.innerHTML = '<div class="empty">Товаров пока нет</div>'; return; }
+  host.innerHTML = list.map(p=>{
+    const {m,pct} = marginOf(p);
+    return `<div class="item">
+      <div>
+        <div class="name">${esc(p.name)}</div>
+        <div class="sub mono">${p.barcode?esc(p.barcode)+" · ":""}остаток ${p.stock} шт. · маржа ${money(m)} ₽ (${pct.toFixed(0)}%)</div>
+      </div>
+      <div class="row" style="gap:2px;">
+        <button class="btn-ghost btn-sm" onclick="WA.editProduct('${p.id}')">✏️</button>
+        <button class="btn-danger" onclick="WA.deleteProduct('${p.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ---------- stock ----------
+const LOW_STOCK = 5;
+document.getElementById("stock-lowonly").addEventListener("change", renderStock);
+function adjustStock(id, delta){
+  const p = state.products.find(x=>x.id===id);
+  if(!p) return;
+  p.stock = Math.max(0, (parseFloat(p.stock)||0) + delta);
+  saveState(); renderStock(); renderProducts();
+}
+function renderStock(){
+  const onlyLow = document.getElementById("stock-lowonly").checked;
+  let list = [...state.products].sort((a,b)=>a.stock-b.stock);
+  if(onlyLow) list = list.filter(p=>p.stock<=LOW_STOCK);
+  const host = document.getElementById("stock-list");
+  if(!list.length){ host.innerHTML = '<div class="empty">Нет товаров для отображения</div>'; return; }
+  host.innerHTML = list.map(p=>{
+    const low = p.stock<=LOW_STOCK;
+    return `<div class="item">
+      <div>
+        <div class="name">${esc(p.name)}</div>
+        <div class="sub"><span class="pill ${low?'warn':'good'} mono">${p.stock} шт.</span></div>
+      </div>
+      <div class="stepper">
+        <button class="btn-ghost" onclick="WA.adjustStock('${p.id}',-1)">−</button>
+        <button class="btn-ghost" onclick="WA.adjustStock('${p.id}',1)">+</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ---------- stores / orders ----------
+function fillStoreSelect(){
+  const sel = document.getElementById("o-store");
+  sel.innerHTML = state.stores.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("");
+}
+document.getElementById("o-newstore").addEventListener("click", ()=>{
+  document.getElementById("ns-name").value="";
+  document.getElementById("modal-store").classList.remove("hidden");
+});
+document.getElementById("ns-cancel").addEventListener("click", ()=>{
+  document.getElementById("modal-store").classList.add("hidden");
+});
+document.getElementById("ns-save").addEventListener("click", ()=>{
+  const name = document.getElementById("ns-name").value.trim();
+  if(!name){ toast("Введите название магазина"); return; }
+  const s = {id:uid(), name};
+  state.stores.push(s); saveState();
+  fillStoreSelect();
+  document.getElementById("o-store").value = s.id;
+  document.getElementById("modal-store").classList.add("hidden");
+});
+
+function fillOrderProductSelect(){
+  const sel = document.getElementById("o-product");
+  sel.innerHTML = state.products.map(p=>`<option value="${p.id}">${esc(p.name)} (остаток ${p.stock})</option>`).join("");
+}
+document.getElementById("o-add").addEventListener("click", ()=>{
+  const pid = document.getElementById("o-product").value;
+  const qty = parseFloat(document.getElementById("o-qty").value)||0;
+  const p = state.products.find(x=>x.id===pid);
+  if(!p || qty<=0) return;
+  const existing = cart.find(c=>c.productId===pid);
+  if(existing) existing.qty += qty;
+  else cart.push({productId:p.id, name:p.name, qty, salePrice:p.sale});
+  renderCart();
+});
+function removeCartItem(i){ cart.splice(i,1); renderCart(); }
+function renderCart(){
+  const host = document.getElementById("o-cart");
+  if(!cart.length){ host.innerHTML = '<div class="empty">Корзина пуста</div>'; }
+  else{
+    host.innerHTML = cart.map((c,i)=>{
+      const line = c.qty*c.salePrice;
+      return `<div class="item">
+        <div>
+          <div class="name">${esc(c.name)}</div>
+          <div class="sub mono">${c.qty} × ${money(c.salePrice)} ₽ = ${money(line)} ₽</div>
+        </div>
+        <button class="btn-danger" onclick="WA.removeCartItem(${i})">🗑️</button>
+      </div>`;
+    }).join("");
+  }
+  const total = cart.reduce((s,c)=>s+c.qty*c.salePrice,0);
+  document.getElementById("o-total").textContent = money(total)+" ₽";
+}
+document.getElementById("o-clear").addEventListener("click", ()=>{ cart=[]; renderCart(); });
+
+document.getElementById("o-confirm").addEventListener("click", async ()=>{
+  if(!cart.length){ toast("Добавьте хотя бы один товар"); return; }
+  const storeId = document.getElementById("o-store").value;
+  const store = state.stores.find(s=>s.id===storeId);
+  if(!store){ toast("Сначала выберите или добавьте магазин"); return; }
+
+  const order = {
+    id: uid(),
+    storeName: store.name,
+    createdAt: new Date().toISOString(),
+    items: cart.map(c=>({name:c.name, qty:c.qty, salePrice:c.salePrice, lineTotal:c.qty*c.salePrice})),
+    total: cart.reduce((s,c)=>s+c.qty*c.salePrice,0),
+  };
+  cart.forEach(c=>{
+    const p = state.products.find(x=>x.id===c.productId);
+    if(p) p.stock = Math.max(0, p.stock - c.qty);
+  });
+  state.orders.unshift(order);
+  saveState();
+  cart = [];
+  renderCart(); renderProducts(); renderStock(); fillOrderProductSelect(); renderOrdersTab();
+  toast("Заказ №"+order.id.slice(-4)+" оформлен, создаём PDF…");
+  await downloadInvoicePdf(order);
+});
+
+function renderOrdersTab(){
+  fillStoreSelect();
+  fillOrderProductSelect();
+  renderCart();
+  const host = document.getElementById("o-history");
+  if(!state.orders.length){ host.innerHTML = '<div class="empty">Заказов пока не было</div>'; return; }
+  host.innerHTML = state.orders.slice(0,25).map(o=>{
+    const d = new Date(o.createdAt);
+    return `<div class="item">
+      <div>
+        <div class="name">${esc(o.storeName)}</div>
+        <div class="sub mono">${d.toLocaleDateString('ru-RU')} · ${money(o.total)} ₽</div>
+      </div>
+      <button class="btn-ghost btn-sm" onclick="WA.redownload('${o.id}')">⬇️ PDF</button>
+    </div>`;
+  }).join("");
+}
+function redownload(orderId){
+  const o = state.orders.find(x=>x.id===orderId);
+  if(o) downloadInvoicePdf(o);
+}
+
+// ---------- analytics ----------
+document.querySelectorAll(".period").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".period").forEach(b=>b.classList.remove("btn-accent"));
+    btn.classList.add("btn-accent");
+    analyticsDays = parseInt(btn.dataset.d,10);
+    renderAnalytics();
+  });
+});
+function renderAnalytics(){
+  document.querySelectorAll(".period").forEach(b=>{
+    b.classList.toggle("btn-accent", parseInt(b.dataset.d,10)===analyticsDays);
+  });
+  const cutoff = analyticsDays>0 ? Date.now()-analyticsDays*86400000 : 0;
+  const orders = state.orders.filter(o=>new Date(o.createdAt).getTime()>=cutoff);
+  const revenue = orders.reduce((s,o)=>s+o.total,0);
+  document.getElementById("a-summary").innerHTML = `
+    <div><div class="muted" style="font-size:12px;">Заказов</div><div class="mono" style="font-size:20px;font-weight:800;">${orders.length}</div></div>
+    <div><div class="muted" style="font-size:12px;">Выручка</div><div class="mono" style="font-size:20px;font-weight:800;">${money(revenue)} ₽</div></div>
+  `;
+  const agg = {};
+  orders.forEach(o=>o.items.forEach(it=>{
+    if(!agg[it.name]) agg[it.name]={qty:0,rev:0};
+    agg[it.name].qty += it.qty; agg[it.name].rev += it.lineTotal;
+  }));
+  const top = Object.entries(agg).sort((a,b)=>b[1].qty-a[1].qty).slice(0,10);
+  const host = document.getElementById("a-top");
+  if(!top.length){ host.innerHTML = '<div class="empty">За выбранный период продаж не было</div>'; return; }
+  host.innerHTML = top.map(([name,v],i)=>`<div class="item">
+    <div>
+      <div class="name">${i+1}. ${esc(name)}</div>
+      <div class="sub mono">продано ${v.qty} шт. · ${money(v.rev)} ₽</div>
+    </div>
+  </div>`).join("");
+}
+
+// ---------- camera barcode scanner ----------
+let scannerInstance = null;
+let scannerBusy = false;
+
+function openScanner(onResult){
+  if(typeof Html5Qrcode === "undefined"){
+    toast("Сканер не загрузился, проверьте интернет-соединение и попробуйте снова");
+    return;
+  }
+  scannerBusy = false;
+  document.getElementById("modal-scanner").classList.remove("hidden");
+  document.getElementById("scan-hint").textContent = "Наведите камеру на штрихкод. Распознавание произойдёт автоматически.";
+  scannerInstance = new Html5Qrcode("scanner-reader", /* verbose */ false);
+  scannerInstance.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: { width: 260, height: 160 } },
+    (decodedText)=>{
+      if(scannerBusy) return;
+      scannerBusy = true;
+      closeScanner();
+      onResult(decodedText);
+    },
+    ()=>{ /* per-frame "not found yet" — ignore, this fires constantly */ }
+  ).catch((err)=>{
+    document.getElementById("scan-hint").textContent =
+      "Не удалось открыть камеру. Разрешите доступ к камере в браузере или введите штрихкод вручную.";
+    console.error(err);
+  });
+}
+function closeScanner(){
+  document.getElementById("modal-scanner").classList.add("hidden");
+  if(scannerInstance){
+    scannerInstance.stop().then(()=>scannerInstance.clear()).catch(()=>{});
+    scannerInstance = null;
+  }
+}
+document.getElementById("scan-cancel").addEventListener("click", closeScanner);
+
+document.getElementById("pf-scan").addEventListener("click", ()=>{
+  document.getElementById("scan-title").textContent = "Сканирование штрихкода товара";
+  openScanner((code)=>{
+    document.getElementById("pf-barcode").value = code;
+    const existing = state.products.find(p=>p.barcode && p.barcode===code);
+    if(existing){
+      fillProductForm(existing);
+      toast("Товар с таким штрихкодом уже есть в базе — форма заполнена");
+    } else {
+      toast("Штрихкод распознан: "+code);
+    }
+  });
+});
+
+document.getElementById("o-scan").addEventListener("click", ()=>{
+  document.getElementById("scan-title").textContent = "Сканирование товара в заказ";
+  openScanner((code)=>{
+    const p = state.products.find(x=>x.barcode && x.barcode===code);
+    if(!p){
+      toast("Товар со штрихкодом "+code+" не найден в базе");
+      return;
+    }
+    document.getElementById("o-product").value = p.id;
+    document.getElementById("o-qty").value = "1";
+    document.getElementById("o-qty").focus();
+    toast("Найден: "+p.name);
+  });
+});
+
+// ---------- data backup / restore ----------
+async function saveFileToDevice(filename, blob){
+  try{
+    const downloads = await Promise.race([
+      window.claude && window.claude.use ? window.claude.use("downloads") : Promise.resolve(null),
+      new Promise(res=>setTimeout(()=>res(null), 4000))
+    ]);
+    if(downloads){ await downloads.save({filename, data: blob}); return true; }
+  }catch(e){ /* fall through */ }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 5000);
+  return true;
+}
+function renderDataTab(){
+  document.getElementById("io-export").value = JSON.stringify(state, null, 2);
+}
+document.getElementById("io-copy").addEventListener("click", async ()=>{
+  const ta = document.getElementById("io-export");
+  ta.value = JSON.stringify(state, null, 2);
+  try{
+    await navigator.clipboard.writeText(ta.value);
+    toast("Скопировано в буфер обмена");
+  }catch(e){
+    ta.focus(); ta.select();
+    toast("Выделено — скопируйте вручную (долгое нажатие → Копировать)");
+  }
+});
+document.getElementById("io-download").addEventListener("click", async ()=>{
+  const json = JSON.stringify(state, null, 2);
+  const blob = new Blob([json], {type:"application/json"});
+  const filename = "opt-uchet-backup-"+new Date().toISOString().slice(0,10)+".json";
+  await saveFileToDevice(filename, blob);
+  toast("Файл сохранён");
+});
+document.getElementById("io-file").addEventListener("change", (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{ document.getElementById("io-import").value = reader.result; };
+  reader.readAsText(file);
+});
+document.getElementById("io-apply").addEventListener("click", ()=>{
+  const raw = document.getElementById("io-import").value.trim();
+  if(!raw){ toast("Вставьте JSON или выберите файл"); return; }
+  let parsed;
+  try{ parsed = JSON.parse(raw); }
+  catch(e){ toast("Это не похоже на корректный JSON"); return; }
+  if(!parsed || !Array.isArray(parsed.products) || !Array.isArray(parsed.stores) || !Array.isArray(parsed.orders)){
+    toast("Файл не похож на резервную копию этого приложения");
+    return;
+  }
+  if(!confirm("Заменить текущие данные приложения содержимым из этого JSON? Отменить это действие будет нельзя.")) return;
+  state = {products: parsed.products, stores: parsed.stores, orders: parsed.orders};
+  saveState();
+  clearProductForm(); renderProducts(); renderStock();
+  fillStoreSelect(); fillOrderProductSelect(); renderOrdersTab(); renderAnalytics();
+  document.getElementById("io-import").value = "";
+  renderDataTab();
+  toast("Данные обновлены");
+});
+
+// ---------- PDF invoice (rendered via html2canvas so Cyrillic needs no font embedding) ----------
+async function downloadInvoicePdf(order){
+  const host = document.getElementById("invoiceCanvasHost");
+  const d = new Date(order.createdAt);
+  const rows = order.items.map(it=>`
+    <tr>
+      <td style="padding:8px;border:1px solid #ccc;">${esc(it.name)}</td>
+      <td style="padding:8px;border:1px solid #ccc;text-align:center;">${it.qty}</td>
+      <td style="padding:8px;border:1px solid #ccc;text-align:right;">${money(it.salePrice)}</td>
+      <td style="padding:8px;border:1px solid #ccc;text-align:right;">${money(it.lineTotal)}</td>
+    </tr>`).join("");
+  host.innerHTML = `
+    <div id="inv" style="width:720px;padding:36px;background:#fff;color:#111;font-family:'Manrope',sans-serif;">
+      <h2 style="margin:0 0 4px;">Накладная / чек заказа</h2>
+      <p style="margin:0 0 2px;color:#444;">Номер заказа: ${esc(order.id.slice(-6))}</p>
+      <p style="margin:0 0 2px;color:#444;">Дата: ${d.toLocaleString('ru-RU')}</p>
+      <p style="margin:0 0 16px;color:#444;">Магазин: ${esc(order.storeName)}</p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <thead><tr>
+          <th style="padding:8px;border:1px solid #ccc;text-align:left;background:#f0f0f0;">Товар</th>
+          <th style="padding:8px;border:1px solid #ccc;background:#f0f0f0;">Кол-во</th>
+          <th style="padding:8px;border:1px solid #ccc;background:#f0f0f0;">Цена, ед.</th>
+          <th style="padding:8px;border:1px solid #ccc;background:#f0f0f0;">Сумма</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p style="text-align:right;font-size:16px;font-weight:800;margin:16px 0 0;">ИТОГО: ${money(order.total)} ₽</p>
+      <p style="margin-top:40px;color:#444;">Подпись представителя магазина: ______________________</p>
+    </div>`;
+  try{
+    const canvas = await html2canvas(document.getElementById("inv"), {scale:2, backgroundColor:"#fff"});
+    const imgData = canvas.toDataURL("image/png");
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({unit:"pt", format:"a4"});
+    const pageW = pdf.internal.pageSize.getWidth();
+    const w = pageW - 60;
+    const h = canvas.height * (w/canvas.width);
+    pdf.addImage(imgData, "PNG", 30, 30, w, h);
+    const blob = pdf.output("blob");
+    const filename = "order_"+order.id.slice(-6)+".pdf";
+    await saveFileToDevice(filename, blob);
+    toast("PDF готов");
+  }catch(err){
+    console.error(err);
+    toast("Не удалось создать PDF");
+  } finally {
+    host.innerHTML = "";
+  }
+}
+
+// ---------- expose for inline handlers ----------
+window.WA = {editProduct, deleteProduct, adjustStock, removeCartItem, redownload};
+
+// ---------- init ----------
+renderProductForm();
+renderProducts();
+renderStock();
+fillStoreSelect();
+fillOrderProductSelect();
+renderOrdersTab();
+document.querySelector('.period[data-d="30"]').classList.add("btn-accent");
+renderAnalytics();
+
+})();
+</script>
+</body>
+</html>
